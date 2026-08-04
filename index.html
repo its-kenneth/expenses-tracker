@@ -152,18 +152,18 @@
   .total-line .label{ font-family:'Special Elite',monospace; font-size:15px; letter-spacing:1px;}
   .total-line .amount{ font-size:22px; font-weight:700; }
 
-  .budget-summary{
-    font-size:13px; margin-bottom:20px; padding-bottom:14px;
-    border-bottom:1px dashed var(--rule);
-  }
-  .budget-summary .b-row{ display:flex; justify-content:space-between; padding:3px 0; }
-  .budget-summary .b-amt{ font-weight:600; }
-  .budget-summary .b-amt.over{ color: var(--stamp); }
-  .budget-summary .b-amt.under{ color: var(--rule-strong); }
-  .budget-summary .b-bar-track{ height:8px; background:rgba(0,0,0,0.08); border-radius:2px; overflow:hidden; margin-top:6px; }
-  .budget-summary .b-bar-fill{ height:100%; border-radius:2px; background: linear-gradient(90deg, var(--rule-strong), var(--stamp)); }
-  .budget-summary .no-budget{ font-style:italic; color:var(--ink-soft); }
-  .budget-summary a.set-link{ color: var(--stamp); cursor:pointer; text-decoration:underline; }
+  .stat-block{ margin-bottom: 16px; }
+  .stat-block .s-row{ display:flex; justify-content:space-between; font-size:13px; padding:2px 0; }
+  .stat-block .s-amt{ font-weight:600; }
+  .stat-block .s-amt.over{ color: var(--stamp); }
+  .stat-block .s-amt.under{ color: var(--rule-strong); }
+  .stat-block .s-bar-track{ height:8px; background:rgba(0,0,0,0.08); border-radius:2px; overflow:hidden; margin-top:6px; }
+  .stat-block .s-bar-fill{ height:100%; border-radius:2px; }
+  .stat-block .s-bar-fill.spend{ background: linear-gradient(90deg, var(--rule-strong), var(--stamp)); }
+  .stat-block .s-bar-fill.progress{ background: var(--brass); }
+  .stat-block .no-budget{ font-style:italic; color:var(--ink-soft); font-size:12px; }
+  .stat-block a.set-link{ color: var(--stamp); cursor:pointer; text-decoration:underline; }
+  .section-divider{ border-top:1px dashed var(--rule); margin: 16px 0; }
 
   .cat-row{ margin-bottom: 14px; }
   .cat-row .cat-head{
@@ -173,6 +173,8 @@
   .cat-row .cat-amt{ font-weight:600; }
   .cat-bar-track{ height:7px; background: rgba(0,0,0,0.08); border-radius: 2px; overflow:hidden;}
   .cat-bar-fill{ height:100%; background: linear-gradient(90deg, var(--rule-strong), var(--stamp)); border-radius:2px; }
+  .cat-row .cat-budget-line{ font-size:11px; color:var(--ink-soft); margin-top:3px; }
+  .cat-row .cat-budget-line.over{ color:var(--stamp); }
 
   .entries{ margin-top: 24px; }
   .entries h3{
@@ -191,11 +193,18 @@
   .entry-row .e-cat{ display:block; font-size:10px; text-transform:uppercase; letter-spacing:0.5px; color:var(--ink-soft); }
   .entry-row .e-amt{ font-weight:600; width:80px; text-align:right; flex-shrink:0; }
 
-  .budget-form-row{ display:flex; gap:16px; align-items:flex-end; }
-  .budget-form-row > div{ flex:1; }
+  .budget-cat-row{ display:flex; align-items:center; gap:12px; margin-top:12px; }
+  .budget-cat-row label{ margin:0; flex:1; }
+  .budget-cat-row input{ width:110px; flex-shrink:0; text-align:right; }
+
   .budget-list{ margin-top:24px; }
+  .budget-month-group{ margin-bottom:16px; }
+  .budget-month-group h4{
+    font-family:'Special Elite', monospace; font-size:12px; letter-spacing:1px;
+    color: var(--ink); margin: 0 0 4px; text-transform:uppercase;
+  }
   .budget-row{
-    display:flex; justify-content:space-between; font-size:13px; padding:5px 0;
+    display:flex; justify-content:space-between; font-size:13px; padding:3px 0;
     border-bottom: 1px dotted rgba(0,0,0,0.12);
   }
 
@@ -233,10 +242,7 @@
           <option>Food</option>
           <option>Transport</option>
           <option>Groceries</option>
-          <option>Utilities</option>
-          <option>Rent</option>
           <option>Entertainment</option>
-          <option>Health</option>
           <option>Shopping</option>
           <option>Other</option>
           <option value="__custom">+ Custom category…</option>
@@ -269,30 +275,32 @@
     <!-- REPORT PANEL -->
     <div class="panel" id="panel-report">
       <select id="month-select" class="month-select"></select>
+
       <div class="total-line">
         <span class="label">Total Spent</span>
         <span class="amount" id="month-total">$0.00</span>
       </div>
-      <div class="budget-summary" id="budget-summary"></div>
+
+      <div class="stat-block" id="month-progress-block"></div>
+      <div class="stat-block" id="overall-budget-block"></div>
+
+      <div class="section-divider"></div>
       <div id="category-breakdown"><div class="empty">Loading…</div></div>
     </div>
 
     <!-- BUDGET PANEL -->
     <div class="panel" id="panel-budget">
       <form id="budget-form">
-        <div class="budget-form-row">
-          <div>
-            <label for="b-month">Month</label>
-            <input type="month" id="b-month" required>
-          </div>
-          <div>
-            <label for="b-amount">Budget</label>
-            <input type="number" id="b-amount" step="0.01" min="0" placeholder="0.00" required>
-          </div>
-        </div>
-        <button type="submit" class="stamp-btn">Set Budget</button>
+        <label for="b-month">Month</label>
+        <select id="b-month"></select>
+
+        <div id="budget-cat-fields"></div>
+
+        <button type="submit" class="stamp-btn">Save Budgets</button>
         <div class="status-line" id="budget-status"></div>
       </form>
+
+      <div class="field-note">Budgets apply to the six built-in categories. A custom category you typed on the New Entry tab won't have a budget line unless its name matches one of these exactly.</div>
 
       <div class="budget-list">
         <h3 style="font-family:'Special Elite', monospace; font-size:13px; letter-spacing:1px; color:var(--ink-soft); text-transform:uppercase; margin-bottom:8px; border-bottom:1px dashed var(--rule); padding-bottom:6px;">Budgets Set</h3>
@@ -309,11 +317,13 @@
  * See README.md for how to get this. Until you do, the app runs in
  * local demo mode (data is stored in your browser only).
  * ---------------------------------------------------------------- */
-const API_URL = "https://script.google.com/macros/s/AKfycbwcgS-E46o4ci63QFmfktpPeMWfjBEgFhr7vz4-otQUhTj_Nl3sSe04LMuZhWUWFcQnUA/exec";
+const API_URL = "PASTE_YOUR_APPS_SCRIPT_WEB_APP_URL_HERE";
 
 const isDemoMode = !API_URL || API_URL.indexOf("PASTE_YOUR") !== -1;
 const LOCAL_ENTRIES_KEY = "ledger_demo_entries";
 const LOCAL_BUDGETS_KEY = "ledger_demo_budgets";
+
+const CATEGORIES = ["Food", "Transport", "Groceries", "Entertainment", "Shopping", "Other"];
 
 function todayISO(){
   const d = new Date();
@@ -333,6 +343,34 @@ function toISODate(raw){
   return d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0") + "-" + String(d.getDate()).padStart(2,"0");
 }
 
+function monthKeyFromOffset(offset){
+  const d = new Date();
+  d.setDate(1); // avoid month-length rollover surprises
+  d.setMonth(d.getMonth() + offset);
+  return d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0");
+}
+
+function monthLabel(key){
+  const [y,m] = key.split("-");
+  const d = new Date(Number(y), Number(m)-1, 1);
+  return d.toLocaleString(undefined, { month: "long", year: "numeric" });
+}
+
+function daysInMonth(key){
+  const [y,m] = key.split("-").map(Number);
+  return new Date(y, m, 0).getDate();
+}
+
+// % of the given month that has elapsed so far (0-100).
+// Past months = 100, future months = 0.
+function monthProgressPct(key){
+  const current = todayISO().slice(0,7);
+  if(key < current) return 100;
+  if(key > current) return 0;
+  const today = new Date();
+  return Math.min(100, (today.getDate() / daysInMonth(key)) * 100);
+}
+
 function loadLocalEntries(){
   try{ return JSON.parse(localStorage.getItem(LOCAL_ENTRIES_KEY) || "[]"); }catch(e){ return []; }
 }
@@ -346,7 +384,7 @@ function saveLocalBudgets(obj){
   localStorage.setItem(LOCAL_BUDGETS_KEY, JSON.stringify(obj));
 }
 
-// Returns { entries: [...], budgets: {...} }
+// Returns { entries: [...], budgets: { "2026-08": {Food:300, ...}, ... } }
 async function fetchAll(){
   if(isDemoMode){
     return { entries: loadLocalEntries(), budgets: loadLocalBudgets() };
@@ -372,23 +410,27 @@ async function addEntry(entry){
   return await res.json();
 }
 
-async function setBudget(month, amount){
+// catBudgets: { "Food": 300, "Transport": 100, ... }
+async function saveBudgets(month, catBudgets){
   if(isDemoMode){
     const budgets = loadLocalBudgets();
-    budgets[month] = amount;
+    budgets[month] = { ...(budgets[month] || {}), ...catBudgets };
     saveLocalBudgets(budgets);
     return { status: "ok" };
   }
   const res = await fetch(API_URL, {
     method: "POST",
     headers: { "Content-Type": "text/plain;charset=utf-8" },
-    body: JSON.stringify({ type: "budget", month, amount })
+    body: JSON.stringify({ type: "budget", month, budgets: catBudgets })
   });
   return await res.json();
 }
 
 function money(n){
   return "$" + Number(n).toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2});
+}
+function pct(n){
+  return Math.round(n) + "%";
 }
 
 /* ---------------- Tabs ---------------- */
@@ -401,7 +443,7 @@ function activateTab(tab){
   document.querySelector(`.tab[data-tab="${tab}"]`).classList.add("active");
   document.getElementById("panel-" + tab).classList.add("active");
   if(tab === "report") renderReport();
-  if(tab === "budget") renderBudgetHistory();
+  if(tab === "budget") loadBudgetTab();
 }
 
 /* ---------------- Entry form ---------------- */
@@ -479,24 +521,20 @@ async function renderRecent(){
 }
 
 /* ---------------- Monthly report ---------------- */
-function monthLabel(key){
-  const [y,m] = key.split("-");
-  const d = new Date(Number(y), Number(m)-1, 1);
-  return d.toLocaleString(undefined, { month: "long", year: "numeric" });
-}
-
 async function renderReport(){
   const monthSelect = document.getElementById("month-select");
   const totalEl = document.getElementById("month-total");
   const breakdownEl = document.getElementById("category-breakdown");
-  const budgetEl = document.getElementById("budget-summary");
+  const overallBudgetEl = document.getElementById("overall-budget-block");
+  const progressEl = document.getElementById("month-progress-block");
 
   let entries, budgets;
   try{
     ({ entries, budgets } = await fetchAll());
   }catch(err){
     breakdownEl.innerHTML = '<div class="empty">Could not load entries: ' + err.message + '</div>';
-    budgetEl.innerHTML = "";
+    overallBudgetEl.innerHTML = "";
+    progressEl.innerHTML = "";
     return;
   }
 
@@ -504,7 +542,8 @@ async function renderReport(){
     monthSelect.innerHTML = "";
     totalEl.textContent = money(0);
     breakdownEl.innerHTML = '<div class="empty">No entries yet.</div>';
-    budgetEl.innerHTML = "";
+    overallBudgetEl.innerHTML = "";
+    progressEl.innerHTML = "";
     return;
   }
 
@@ -521,63 +560,143 @@ async function renderReport(){
   const total = inMonth.reduce((s,e)=> s + Number(e.amount), 0);
   totalEl.textContent = money(total);
 
-  const budget = budgets && budgets[selected] !== undefined ? Number(budgets[selected]) : null;
-  if(budget !== null && !isNaN(budget)){
-    const remaining = budget - total;
-    const pct = budget > 0 ? Math.min(100, (total / budget) * 100) : 100;
-    budgetEl.innerHTML = `
-      <div class="b-row">
-        <span>Budget for ${monthLabel(selected)}</span>
-        <span class="b-amt">${money(budget)}</span>
-      </div>
-      <div class="b-row">
-        <span>${remaining >= 0 ? "Remaining" : "Over budget by"}</span>
-        <span class="b-amt ${remaining >= 0 ? "under" : "over"}">${money(Math.abs(remaining))}</span>
-      </div>
-      <div class="b-bar-track"><div class="b-bar-fill" style="width:${pct.toFixed(1)}%"></div></div>
+  // --- % of month elapsed ---
+  const progress = monthProgressPct(selected);
+  progressEl.innerHTML = `
+    <div class="s-row"><span>Month Elapsed</span><span class="s-amt">${pct(progress)}</span></div>
+    <div class="s-bar-track"><div class="s-bar-fill progress" style="width:${progress.toFixed(1)}%"></div></div>
+  `;
+
+  // --- overall budget vs spend ---
+  const monthBudgets = (budgets && budgets[selected]) || {};
+  const overallBudget = Object.values(monthBudgets).reduce((s,v)=> s + (Number(v)||0), 0);
+
+  if(overallBudget > 0){
+    const spentPct = (total / overallBudget) * 100;
+    const over = total > overallBudget;
+    overallBudgetEl.innerHTML = `
+      <div class="s-row"><span>Budget for ${monthLabel(selected)}</span><span class="s-amt">${money(overallBudget)}</span></div>
+      <div class="s-row"><span>% of Budget Spent</span><span class="s-amt ${over ? "over" : "under"}">${pct(spentPct)}</span></div>
+      <div class="s-bar-track"><div class="s-bar-fill spend" style="width:${Math.min(100,spentPct).toFixed(1)}%"></div></div>
     `;
   }else{
-    budgetEl.innerHTML = `<div class="no-budget">No budget set for ${monthLabel(selected)}. <a class="set-link" id="go-set-budget">Set one</a>.</div>`;
+    overallBudgetEl.innerHTML = `<div class="no-budget">No budget set for ${monthLabel(selected)}. <a class="set-link" id="go-set-budget">Set one</a>.</div>`;
     const link = document.getElementById("go-set-budget");
     if(link) link.addEventListener("click", ()=>{
       activateTab("budget");
-      document.getElementById("b-month").value = selected;
+      setTimeout(()=>{
+        const sel = document.getElementById("b-month");
+        if(sel && [...sel.options].some(o=>o.value===selected)) sel.value = selected;
+        prefillBudgetCategoryInputs();
+      }, 0);
     });
   }
 
+  // --- per-category breakdown ---
   const byCat = {};
   inMonth.forEach(e => { byCat[e.category] = (byCat[e.category] || 0) + Number(e.amount); });
   const catList = Object.entries(byCat).sort((a,b)=> b[1]-a[1]);
   const max = catList.length ? catList[0][1] : 1;
 
-  breakdownEl.innerHTML = catList.map(([cat, amt]) => `
-    <div class="cat-row">
-      <div class="cat-head">
-        <span>${cat}</span>
-        <span class="cat-amt">${money(amt)} · ${total ? Math.round(amt/total*100) : 0}%</span>
+  breakdownEl.innerHTML = catList.map(([cat, amt]) => {
+    const catBudget = monthBudgets[cat];
+    let budgetLine = "";
+    if(catBudget !== undefined && catBudget > 0){
+      const catPct = (amt / catBudget) * 100;
+      const over = amt > catBudget;
+      budgetLine = `<div class="cat-budget-line ${over?'over':''}">${pct(catPct)} of ${money(catBudget)} budget${over ? " — over" : ""}</div>`;
+    }
+    return `
+      <div class="cat-row">
+        <div class="cat-head">
+          <span>${cat}</span>
+          <span class="cat-amt">${money(amt)} · ${total ? Math.round(amt/total*100) : 0}%</span>
+        </div>
+        <div class="cat-bar-track"><div class="cat-bar-fill" style="width:${(amt/max*100).toFixed(1)}%"></div></div>
+        ${budgetLine}
       </div>
-      <div class="cat-bar-track"><div class="cat-bar-fill" style="width:${(amt/max*100).toFixed(1)}%"></div></div>
-    </div>
-  `).join("");
+    `;
+  }).join("");
 }
 
 /* ---------------- Budget tab ---------------- */
-const monthInput = document.getElementById("b-month");
-monthInput.value = todayISO().slice(0,7);
+let cachedBudgets = {};
+let cachedBudgetMonths = [];
+
+// Build the category input fields once.
+const budgetFieldsEl = document.getElementById("budget-cat-fields");
+budgetFieldsEl.innerHTML = CATEGORIES.map(cat => `
+  <div class="budget-cat-row">
+    <label for="b-cat-${cat}">${cat}</label>
+    <input type="number" step="0.01" min="0" id="b-cat-${cat}" class="b-cat-input" data-cat="${cat}" placeholder="0.00">
+  </div>
+`).join("");
+
+function prefillBudgetCategoryInputs(){
+  const month = document.getElementById("b-month").value;
+  const monthBudgets = cachedBudgets[month] || {};
+  CATEGORIES.forEach(cat => {
+    const input = document.getElementById("b-cat-" + cat);
+    input.value = monthBudgets[cat] !== undefined ? monthBudgets[cat] : "";
+  });
+}
+
+document.getElementById("b-month").addEventListener("change", prefillBudgetCategoryInputs);
+
+async function loadBudgetTab(){
+  const monthSelect = document.getElementById("b-month");
+  const previousSelection = monthSelect.value;
+
+  let entries, budgets;
+  try{
+    ({ entries, budgets } = await fetchAll());
+  }catch(err){
+    document.getElementById("budget-history").innerHTML = '<div class="empty">Could not load budgets: ' + err.message + '</div>';
+    return;
+  }
+  cachedBudgets = budgets || {};
+
+  // Month options: a year back to a few months ahead, plus any month that
+  // already has entries or budgets, so nothing is ever out of range.
+  const generated = [];
+  for(let i = -12; i <= 6; i++) generated.push(monthKeyFromOffset(i));
+  const fromData = [
+    ...Object.keys(cachedBudgets),
+    ...entries.map(e => toISODate(e.date).slice(0,7)).filter(Boolean)
+  ];
+  cachedBudgetMonths = [...new Set([...generated, ...fromData])].sort().reverse();
+
+  const currentMonth = todayISO().slice(0,7);
+  const selected = previousSelection && cachedBudgetMonths.includes(previousSelection) ? previousSelection : currentMonth;
+  monthSelect.innerHTML = cachedBudgetMonths.map(m => `<option value="${m}" ${m===selected?"selected":""}>${monthLabel(m)}</option>`).join("");
+
+  prefillBudgetCategoryInputs();
+  renderBudgetHistory();
+}
 
 document.getElementById("budget-form").addEventListener("submit", async (e)=>{
   e.preventDefault();
   const statusEl = document.getElementById("budget-status");
-  const month = monthInput.value;
-  const amount = parseFloat(document.getElementById("b-amount").value);
+  const month = document.getElementById("b-month").value;
 
   if(!month){
     statusEl.textContent = "Choose a month.";
     statusEl.classList.add("err");
     return;
   }
-  if(isNaN(amount) || amount < 0){
-    statusEl.textContent = "Enter a valid budget amount.";
+
+  const catBudgets = {};
+  let hasValue = false;
+  CATEGORIES.forEach(cat => {
+    const raw = document.getElementById("b-cat-" + cat).value;
+    if(raw !== ""){
+      const n = parseFloat(raw);
+      if(!isNaN(n) && n >= 0){ catBudgets[cat] = n; hasValue = true; }
+    }
+  });
+
+  if(!hasValue){
+    statusEl.textContent = "Enter a budget for at least one category.";
     statusEl.classList.add("err");
     return;
   }
@@ -586,36 +705,37 @@ document.getElementById("budget-form").addEventListener("submit", async (e)=>{
   statusEl.textContent = "Saving…";
 
   try{
-    const result = await setBudget(month, amount);
+    const result = await saveBudgets(month, catBudgets);
     if(result.status !== "ok") throw new Error(result.message || "Unknown error");
     statusEl.classList.remove("err");
-    statusEl.textContent = "Budget set for " + monthLabel(month) + ".";
-    document.getElementById("b-amount").value = "";
-    await renderBudgetHistory();
+    statusEl.textContent = "Budgets saved for " + monthLabel(month) + ".";
+    await loadBudgetTab();
   }catch(err){
     statusEl.textContent = "Could not save: " + err.message;
     statusEl.classList.add("err");
   }
 });
 
-async function renderBudgetHistory(){
+function renderBudgetHistory(){
   const historyEl = document.getElementById("budget-history");
-  try{
-    const { budgets } = await fetchAll();
-    const keys = Object.keys(budgets || {}).sort().reverse();
-    if(keys.length === 0){
-      historyEl.innerHTML = '<div class="empty">No budgets set yet.</div>';
-      return;
-    }
-    historyEl.innerHTML = keys.map(k => `
-      <div class="budget-row">
-        <span>${monthLabel(k)}</span>
-        <span>${money(budgets[k])}</span>
-      </div>
-    `).join("");
-  }catch(err){
-    historyEl.innerHTML = '<div class="empty">Could not load budgets: ' + err.message + '</div>';
+  const months = Object.keys(cachedBudgets).sort().reverse();
+  if(months.length === 0){
+    historyEl.innerHTML = '<div class="empty">No budgets set yet.</div>';
+    return;
   }
+  historyEl.innerHTML = months.map(m => {
+    const cats = cachedBudgets[m];
+    const rows = Object.entries(cats).map(([cat, amt]) => `
+      <div class="budget-row"><span>${cat}</span><span>${money(amt)}</span></div>
+    `).join("");
+    const total = Object.values(cats).reduce((s,v)=> s + (Number(v)||0), 0);
+    return `
+      <div class="budget-month-group">
+        <h4>${monthLabel(m)} · ${money(total)} total</h4>
+        ${rows}
+      </div>
+    `;
+  }).join("");
 }
 
 /* ---------------- Config note ---------------- */
