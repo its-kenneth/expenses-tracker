@@ -86,7 +86,7 @@
     background-repeat: repeat-y;
   }
 
-  .tabs{ display:flex; gap:6px; margin-bottom:18px; }
+  .tabs{ display:flex; gap:6px; margin-bottom:18px; flex-wrap:wrap; }
   .tab{
     font-family:'IBM Plex Mono', monospace;
     font-size:12px; letter-spacing:1px; text-transform:uppercase;
@@ -135,6 +135,7 @@
 
   .status-line{ font-size:12px; color:var(--ink-soft); margin-top:10px; min-height:16px; }
   .status-line.err{ color:var(--stamp); }
+  .status-line.ok{ color: var(--rule-strong); }
 
   .field-note{
     font-size:11px; color:var(--ink-soft); margin-top:18px; line-height:1.5;
@@ -146,10 +147,23 @@
   .total-line{
     display:flex; justify-content:space-between; align-items:baseline;
     border-bottom: 3px double var(--rule-strong);
-    padding-bottom: 10px; margin-bottom: 16px;
+    padding-bottom: 10px; margin-bottom: 12px;
   }
   .total-line .label{ font-family:'Special Elite',monospace; font-size:15px; letter-spacing:1px;}
   .total-line .amount{ font-size:22px; font-weight:700; }
+
+  .budget-summary{
+    font-size:13px; margin-bottom:20px; padding-bottom:14px;
+    border-bottom:1px dashed var(--rule);
+  }
+  .budget-summary .b-row{ display:flex; justify-content:space-between; padding:3px 0; }
+  .budget-summary .b-amt{ font-weight:600; }
+  .budget-summary .b-amt.over{ color: var(--stamp); }
+  .budget-summary .b-amt.under{ color: var(--rule-strong); }
+  .budget-summary .b-bar-track{ height:8px; background:rgba(0,0,0,0.08); border-radius:2px; overflow:hidden; margin-top:6px; }
+  .budget-summary .b-bar-fill{ height:100%; border-radius:2px; background: linear-gradient(90deg, var(--rule-strong), var(--stamp)); }
+  .budget-summary .no-budget{ font-style:italic; color:var(--ink-soft); }
+  .budget-summary a.set-link{ color: var(--stamp); cursor:pointer; text-decoration:underline; }
 
   .cat-row{ margin-bottom: 14px; }
   .cat-row .cat-head{
@@ -167,12 +181,23 @@
     border-bottom:1px dashed var(--rule); padding-bottom:6px;
   }
   .entry-row{
-    display:flex; justify-content:space-between; font-size:13px; padding:4px 0;
+    display:flex; justify-content:space-between; align-items:baseline; gap:8px;
+    font-size:13px; padding:5px 0;
     border-bottom: 1px dotted rgba(0,0,0,0.12);
   }
-  .entry-row .e-date{ color: var(--ink-soft); width:90px; flex-shrink:0; }
-  .entry-row .e-cat{ flex:1; text-transform:uppercase; letter-spacing:0.5px; }
-  .entry-row .e-amt{ font-weight:600; width:90px; text-align:right; }
+  .entry-row .e-date{ color: var(--ink-soft); width:82px; flex-shrink:0; font-size:12px; }
+  .entry-row .e-mid{ flex:1; min-width:0; }
+  .entry-row .e-item{ display:block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .entry-row .e-cat{ display:block; font-size:10px; text-transform:uppercase; letter-spacing:0.5px; color:var(--ink-soft); }
+  .entry-row .e-amt{ font-weight:600; width:80px; text-align:right; flex-shrink:0; }
+
+  .budget-form-row{ display:flex; gap:16px; align-items:flex-end; }
+  .budget-form-row > div{ flex:1; }
+  .budget-list{ margin-top:24px; }
+  .budget-row{
+    display:flex; justify-content:space-between; font-size:13px; padding:5px 0;
+    border-bottom: 1px dotted rgba(0,0,0,0.12);
+  }
 
   .empty{ font-size:13px; color:var(--ink-soft); font-style:italic; padding:12px 0; }
 
@@ -194,11 +219,15 @@
     <div class="tabs">
       <button class="tab active" data-tab="entry">New Entry</button>
       <button class="tab" data-tab="report">Monthly Report</button>
+      <button class="tab" data-tab="budget">Budget</button>
     </div>
 
     <!-- ENTRY PANEL -->
     <div class="panel active" id="panel-entry">
       <form id="entry-form">
+        <label for="f-item">Item</label>
+        <input type="text" id="f-item" placeholder="e.g. Lunch with team" required>
+
         <label for="f-category">Category</label>
         <select id="f-category">
           <option>Food</option>
@@ -244,7 +273,31 @@
         <span class="label">Total Spent</span>
         <span class="amount" id="month-total">$0.00</span>
       </div>
+      <div class="budget-summary" id="budget-summary"></div>
       <div id="category-breakdown"><div class="empty">Loading…</div></div>
+    </div>
+
+    <!-- BUDGET PANEL -->
+    <div class="panel" id="panel-budget">
+      <form id="budget-form">
+        <div class="budget-form-row">
+          <div>
+            <label for="b-month">Month</label>
+            <input type="month" id="b-month" required>
+          </div>
+          <div>
+            <label for="b-amount">Budget</label>
+            <input type="number" id="b-amount" step="0.01" min="0" placeholder="0.00" required>
+          </div>
+        </div>
+        <button type="submit" class="stamp-btn">Set Budget</button>
+        <div class="status-line" id="budget-status"></div>
+      </form>
+
+      <div class="budget-list">
+        <h3 style="font-family:'Special Elite', monospace; font-size:13px; letter-spacing:1px; color:var(--ink-soft); text-transform:uppercase; margin-bottom:8px; border-bottom:1px dashed var(--rule); padding-bottom:6px;">Budgets Set</h3>
+        <div id="budget-history"><div class="empty">Loading…</div></div>
+      </div>
     </div>
 
   </div>
@@ -256,28 +309,52 @@
  * See README.md for how to get this. Until you do, the app runs in
  * local demo mode (data is stored in your browser only).
  * ---------------------------------------------------------------- */
-const API_URL = "https://script.google.com/macros/s/AKfycbyqpMhZ_CUY9WmgSS8aQf8ygR0lFQ5U9BhtfzBddwoMJOhXcWImC4SNHA_im5CqXaiNbg/exec";
+const API_URL = "https://script.google.com/macros/s/AKfycbwcgS-E46o4ci63QFmfktpPeMWfjBEgFhr7vz4-otQUhTj_Nl3sSe04LMuZhWUWFcQnUA/exec";
 
 const isDemoMode = !API_URL || API_URL.indexOf("PASTE_YOUR") !== -1;
-const LOCAL_KEY = "ledger_demo_entries";
+const LOCAL_ENTRIES_KEY = "ledger_demo_entries";
+const LOCAL_BUDGETS_KEY = "ledger_demo_budgets";
 
 function todayISO(){
   const d = new Date();
   return d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0") + "-" + String(d.getDate()).padStart(2,"0");
 }
 
-function loadLocalEntries(){
-  try{ return JSON.parse(localStorage.getItem(LOCAL_KEY) || "[]"); }catch(e){ return []; }
-}
-function saveLocalEntries(list){
-  localStorage.setItem(LOCAL_KEY, JSON.stringify(list));
+// Normalizes any date value (clean ISO string, timestamp string, or a
+// full "Thu Aug 01 2026 00:00:00 GMT+0800 (...)"-style string) down to
+// a plain "yyyy-MM-dd" with no time-of-day component.
+function toISODate(raw){
+  if(raw === null || raw === undefined || raw === "") return "";
+  const s = String(raw).trim();
+  const isoMatch = s.match(/^\d{4}-\d{2}-\d{2}/);
+  if(isoMatch) return isoMatch[0];
+  const d = new Date(s);
+  if(isNaN(d.getTime())) return "";
+  return d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0") + "-" + String(d.getDate()).padStart(2,"0");
 }
 
-async function fetchEntries(){
-  if(isDemoMode) return loadLocalEntries();
+function loadLocalEntries(){
+  try{ return JSON.parse(localStorage.getItem(LOCAL_ENTRIES_KEY) || "[]"); }catch(e){ return []; }
+}
+function saveLocalEntries(list){
+  localStorage.setItem(LOCAL_ENTRIES_KEY, JSON.stringify(list));
+}
+function loadLocalBudgets(){
+  try{ return JSON.parse(localStorage.getItem(LOCAL_BUDGETS_KEY) || "{}"); }catch(e){ return {}; }
+}
+function saveLocalBudgets(obj){
+  localStorage.setItem(LOCAL_BUDGETS_KEY, JSON.stringify(obj));
+}
+
+// Returns { entries: [...], budgets: {...} }
+async function fetchAll(){
+  if(isDemoMode){
+    return { entries: loadLocalEntries(), budgets: loadLocalBudgets() };
+  }
   const res = await fetch(API_URL, { method: "GET" });
-  if(!res.ok) throw new Error("Failed to load entries");
-  return await res.json();
+  if(!res.ok) throw new Error("Failed to load data");
+  const data = await res.json();
+  return { entries: data.entries || [], budgets: data.budgets || {} };
 }
 
 async function addEntry(entry){
@@ -287,11 +364,25 @@ async function addEntry(entry){
     saveLocalEntries(list);
     return { status: "ok" };
   }
-  // sent as text/plain to avoid a CORS preflight against Apps Script
   const res = await fetch(API_URL, {
     method: "POST",
     headers: { "Content-Type": "text/plain;charset=utf-8" },
     body: JSON.stringify(entry)
+  });
+  return await res.json();
+}
+
+async function setBudget(month, amount){
+  if(isDemoMode){
+    const budgets = loadLocalBudgets();
+    budgets[month] = amount;
+    saveLocalBudgets(budgets);
+    return { status: "ok" };
+  }
+  const res = await fetch(API_URL, {
+    method: "POST",
+    headers: { "Content-Type": "text/plain;charset=utf-8" },
+    body: JSON.stringify({ type: "budget", month, amount })
   });
   return await res.json();
 }
@@ -302,14 +393,16 @@ function money(n){
 
 /* ---------------- Tabs ---------------- */
 document.querySelectorAll(".tab").forEach(btn=>{
-  btn.addEventListener("click", ()=>{
-    document.querySelectorAll(".tab").forEach(b=>b.classList.remove("active"));
-    document.querySelectorAll(".panel").forEach(p=>p.classList.remove("active"));
-    btn.classList.add("active");
-    document.getElementById("panel-" + btn.dataset.tab).classList.add("active");
-    if(btn.dataset.tab === "report") renderReport();
-  });
+  btn.addEventListener("click", ()=> activateTab(btn.dataset.tab));
 });
+function activateTab(tab){
+  document.querySelectorAll(".tab").forEach(b=>b.classList.remove("active"));
+  document.querySelectorAll(".panel").forEach(p=>p.classList.remove("active"));
+  document.querySelector(`.tab[data-tab="${tab}"]`).classList.add("active");
+  document.getElementById("panel-" + tab).classList.add("active");
+  if(tab === "report") renderReport();
+  if(tab === "budget") renderBudgetHistory();
+}
 
 /* ---------------- Entry form ---------------- */
 const dateInput = document.getElementById("f-date");
@@ -324,10 +417,16 @@ catSelect.addEventListener("change", ()=>{
 document.getElementById("entry-form").addEventListener("submit", async (e)=>{
   e.preventDefault();
   const statusEl = document.getElementById("status");
+  const item = document.getElementById("f-item").value.trim();
   const amount = parseFloat(document.getElementById("f-amount").value);
   const category = catSelect.value === "__custom" ? (catCustom.value.trim() || "Other") : catSelect.value;
   const date = dateInput.value || todayISO();
 
+  if(!item){
+    statusEl.textContent = "Enter what the item was.";
+    statusEl.classList.add("err");
+    return;
+  }
   if(!amount || amount <= 0){
     statusEl.textContent = "Enter an amount greater than zero.";
     statusEl.classList.add("err");
@@ -338,9 +437,11 @@ document.getElementById("entry-form").addEventListener("submit", async (e)=>{
   statusEl.textContent = "Posting to ledger…";
 
   try{
-    const result = await addEntry({ date, amount, category });
+    const result = await addEntry({ date, amount, category, item });
     if(result.status !== "ok") throw new Error(result.message || "Unknown error");
-    statusEl.textContent = "Entered " + money(amount) + " under " + category + ".";
+    statusEl.classList.remove("err");
+    statusEl.textContent = "Entered " + money(amount) + " for " + item + ".";
+    document.getElementById("f-item").value = "";
     document.getElementById("f-amount").value = "";
     await renderRecent();
   }catch(err){
@@ -353,16 +454,22 @@ document.getElementById("entry-form").addEventListener("submit", async (e)=>{
 async function renderRecent(){
   const listEl = document.getElementById("recent-list");
   try{
-    const entries = await fetchEntries();
+    const { entries } = await fetchAll();
     if(entries.length === 0){
       listEl.innerHTML = '<div class="empty">No entries yet. Ring up your first one above.</div>';
       return;
     }
-    const sorted = [...entries].sort((a,b)=> b.date.localeCompare(a.date)).slice(0,8);
+    const sorted = [...entries]
+      .map(en => ({ ...en, _iso: toISODate(en.date) }))
+      .sort((a,b)=> b._iso.localeCompare(a._iso))
+      .slice(0,8);
     listEl.innerHTML = sorted.map(en => `
       <div class="entry-row">
-        <span class="e-date">${en.date}</span>
-        <span class="e-cat">${en.category}</span>
+        <span class="e-date">${en._iso}</span>
+        <span class="e-mid">
+          <span class="e-item">${en.item || "(no item)"}</span>
+          <span class="e-cat">${en.category}</span>
+        </span>
         <span class="e-amt">${money(en.amount)}</span>
       </div>
     `).join("");
@@ -372,7 +479,6 @@ async function renderRecent(){
 }
 
 /* ---------------- Monthly report ---------------- */
-function monthKey(dateStr){ return dateStr.slice(0,7); } // yyyy-MM
 function monthLabel(key){
   const [y,m] = key.split("-");
   const d = new Date(Number(y), Number(m)-1, 1);
@@ -383,12 +489,14 @@ async function renderReport(){
   const monthSelect = document.getElementById("month-select");
   const totalEl = document.getElementById("month-total");
   const breakdownEl = document.getElementById("category-breakdown");
+  const budgetEl = document.getElementById("budget-summary");
 
-  let entries;
+  let entries, budgets;
   try{
-    entries = await fetchEntries();
+    ({ entries, budgets } = await fetchAll());
   }catch(err){
     breakdownEl.innerHTML = '<div class="empty">Could not load entries: ' + err.message + '</div>';
+    budgetEl.innerHTML = "";
     return;
   }
 
@@ -396,20 +504,46 @@ async function renderReport(){
     monthSelect.innerHTML = "";
     totalEl.textContent = money(0);
     breakdownEl.innerHTML = '<div class="empty">No entries yet.</div>';
+    budgetEl.innerHTML = "";
     return;
   }
 
-  const months = [...new Set(entries.map(e=>monthKey(e.date)))].sort().reverse();
-  const currentMonth = monthKey(todayISO());
-  const selected = monthSelect.value && months.includes(monthSelect.value) ? monthSelect.value
+  const previousSelection = monthSelect.value;
+  const months = [...new Set(entries.map(e => toISODate(e.date).slice(0,7)).filter(Boolean))].sort().reverse();
+  const currentMonth = todayISO().slice(0,7);
+  const selected = previousSelection && months.includes(previousSelection) ? previousSelection
                    : (months.includes(currentMonth) ? currentMonth : months[0]);
 
   monthSelect.innerHTML = months.map(m => `<option value="${m}" ${m===selected?"selected":""}>${monthLabel(m)}</option>`).join("");
   monthSelect.onchange = renderReport;
 
-  const inMonth = entries.filter(e => monthKey(e.date) === selected);
+  const inMonth = entries.filter(e => toISODate(e.date).slice(0,7) === selected);
   const total = inMonth.reduce((s,e)=> s + Number(e.amount), 0);
   totalEl.textContent = money(total);
+
+  const budget = budgets && budgets[selected] !== undefined ? Number(budgets[selected]) : null;
+  if(budget !== null && !isNaN(budget)){
+    const remaining = budget - total;
+    const pct = budget > 0 ? Math.min(100, (total / budget) * 100) : 100;
+    budgetEl.innerHTML = `
+      <div class="b-row">
+        <span>Budget for ${monthLabel(selected)}</span>
+        <span class="b-amt">${money(budget)}</span>
+      </div>
+      <div class="b-row">
+        <span>${remaining >= 0 ? "Remaining" : "Over budget by"}</span>
+        <span class="b-amt ${remaining >= 0 ? "under" : "over"}">${money(Math.abs(remaining))}</span>
+      </div>
+      <div class="b-bar-track"><div class="b-bar-fill" style="width:${pct.toFixed(1)}%"></div></div>
+    `;
+  }else{
+    budgetEl.innerHTML = `<div class="no-budget">No budget set for ${monthLabel(selected)}. <a class="set-link" id="go-set-budget">Set one</a>.</div>`;
+    const link = document.getElementById("go-set-budget");
+    if(link) link.addEventListener("click", ()=>{
+      activateTab("budget");
+      document.getElementById("b-month").value = selected;
+    });
+  }
 
   const byCat = {};
   inMonth.forEach(e => { byCat[e.category] = (byCat[e.category] || 0) + Number(e.amount); });
@@ -425,6 +559,63 @@ async function renderReport(){
       <div class="cat-bar-track"><div class="cat-bar-fill" style="width:${(amt/max*100).toFixed(1)}%"></div></div>
     </div>
   `).join("");
+}
+
+/* ---------------- Budget tab ---------------- */
+const monthInput = document.getElementById("b-month");
+monthInput.value = todayISO().slice(0,7);
+
+document.getElementById("budget-form").addEventListener("submit", async (e)=>{
+  e.preventDefault();
+  const statusEl = document.getElementById("budget-status");
+  const month = monthInput.value;
+  const amount = parseFloat(document.getElementById("b-amount").value);
+
+  if(!month){
+    statusEl.textContent = "Choose a month.";
+    statusEl.classList.add("err");
+    return;
+  }
+  if(isNaN(amount) || amount < 0){
+    statusEl.textContent = "Enter a valid budget amount.";
+    statusEl.classList.add("err");
+    return;
+  }
+
+  statusEl.classList.remove("err");
+  statusEl.textContent = "Saving…";
+
+  try{
+    const result = await setBudget(month, amount);
+    if(result.status !== "ok") throw new Error(result.message || "Unknown error");
+    statusEl.classList.remove("err");
+    statusEl.textContent = "Budget set for " + monthLabel(month) + ".";
+    document.getElementById("b-amount").value = "";
+    await renderBudgetHistory();
+  }catch(err){
+    statusEl.textContent = "Could not save: " + err.message;
+    statusEl.classList.add("err");
+  }
+});
+
+async function renderBudgetHistory(){
+  const historyEl = document.getElementById("budget-history");
+  try{
+    const { budgets } = await fetchAll();
+    const keys = Object.keys(budgets || {}).sort().reverse();
+    if(keys.length === 0){
+      historyEl.innerHTML = '<div class="empty">No budgets set yet.</div>';
+      return;
+    }
+    historyEl.innerHTML = keys.map(k => `
+      <div class="budget-row">
+        <span>${monthLabel(k)}</span>
+        <span>${money(budgets[k])}</span>
+      </div>
+    `).join("");
+  }catch(err){
+    historyEl.innerHTML = '<div class="empty">Could not load budgets: ' + err.message + '</div>';
+  }
 }
 
 /* ---------------- Config note ---------------- */
