@@ -614,15 +614,18 @@ async function renderReport(){
   const byCat = {};
   inMonth.forEach(e => { byCat[e.category] = (byCat[e.category] || 0) + Number(e.amount); });
 
-  // Always show the built-in categories, even at $0 spent, plus any
-  // custom category that has spending this month.
-  const allCatNames = [...new Set([...CATEGORIES, ...Object.keys(byCat)])];
+  // Only show a category if it has spending this month, a budget set
+  // for this month, or both — skip categories with neither.
+  const allCatNames = [...new Set([...CATEGORIES, ...Object.keys(byCat)])]
+    .filter(cat => (byCat[cat] || 0) > 0 || (monthBudgets[cat] !== undefined && monthBudgets[cat] > 0));
   const catList = allCatNames
     .map(cat => [cat, byCat[cat] || 0])
     .sort((a,b)=> b[1]-a[1]);
   const max = catList.length && catList[0][1] > 0 ? catList[0][1] : 1;
 
-  breakdownEl.innerHTML = catList.map(([cat, amt]) => {
+  breakdownEl.innerHTML = catList.length === 0
+    ? `<div class="empty">No spending or budgets for ${monthLabel(selected)}.</div>`
+    : catList.map(([cat, amt]) => {
     const catBudget = monthBudgets[cat];
     let amtLine;
     if(catBudget !== undefined && catBudget > 0){
