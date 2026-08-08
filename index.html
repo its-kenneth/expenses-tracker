@@ -165,16 +165,34 @@
   .stat-block a.set-link{ color: var(--stamp); cursor:pointer; text-decoration:underline; }
   .section-divider{ border-top:1px dashed var(--rule); margin: 16px 0; }
 
-  .cat-row{ margin-bottom: 14px; }
+  .cat-row{
+    margin-bottom: 10px;
+    border-bottom: 1px dotted rgba(0,0,0,0.12);
+    padding-bottom: 10px;
+  }
+  .cat-row summary{
+    list-style:none; cursor:pointer; outline:none;
+  }
+  .cat-row summary::-webkit-details-marker{ display:none; }
   .cat-row .cat-head{
     display:flex; justify-content:space-between; font-size:13px;
-    text-transform:uppercase; letter-spacing:1px; margin-bottom:4px;
+    margin-bottom:4px;
   }
-  .cat-row .cat-amt{ font-weight:600; }
+  .cat-row .cat-name{ text-transform:uppercase; letter-spacing:1px; }
+  .cat-row .cat-name::before{
+    content:"▸"; display:inline-block; font-size:10px; width:12px;
+    color: var(--ink-soft); transition: transform .15s ease;
+  }
+  .cat-row[open] .cat-name::before{ transform: rotate(90deg); }
+  .cat-row .cat-amt{ font-weight:600; text-align:right; }
+  .cat-row .cat-pct{ font-weight:400; }
+  .cat-row .cat-pct.over{ color: var(--stamp); font-weight:600; }
+  .cat-row .cat-pct.muted{ color: var(--ink-soft); font-style:italic; }
   .cat-bar-track{ height:7px; background: rgba(0,0,0,0.08); border-radius: 2px; overflow:hidden;}
   .cat-bar-fill{ height:100%; background: linear-gradient(90deg, var(--rule-strong), var(--stamp)); border-radius:2px; }
-  .cat-row .cat-budget-line{ font-size:11px; color:var(--ink-soft); margin-top:3px; }
-  .cat-row .cat-budget-line.over{ color:var(--stamp); }
+  .cat-expenses{ margin-top:10px; padding-left:14px; }
+  .cat-expenses .entry-row{ font-size:12px; padding:4px 0; }
+  .cat-expenses .empty{ padding:4px 0; font-size:12px; }
 
   .entries{ margin-top: 24px; }
   .entries h3{
@@ -595,26 +613,52 @@ async function renderReport(){
   // --- per-category breakdown ---
   const byCat = {};
   inMonth.forEach(e => { byCat[e.category] = (byCat[e.category] || 0) + Number(e.amount); });
-  const catList = Object.entries(byCat).sort((a,b)=> b[1]-a[1]);
-  const max = catList.length ? catList[0][1] : 1;
+
+  // Always show the built-in categories, even at $0 spent, plus any
+  // custom category that has spending this month.
+  const allCatNames = [...new Set([...CATEGORIES, ...Object.keys(byCat)])];
+  const catList = allCatNames
+    .map(cat => [cat, byCat[cat] || 0])
+    .sort((a,b)=> b[1]-a[1]);
+  const max = catList.length && catList[0][1] > 0 ? catList[0][1] : 1;
 
   breakdownEl.innerHTML = catList.map(([cat, amt]) => {
     const catBudget = monthBudgets[cat];
-    let budgetLine = "";
+    let amtLine;
     if(catBudget !== undefined && catBudget > 0){
       const catPct = (amt / catBudget) * 100;
       const over = amt > catBudget;
-      budgetLine = `<div class="cat-budget-line ${over?'over':''}">${pct(catPct)} of ${money(catBudget)} budget${over ? " — over" : ""}</div>`;
+      amtLine = `${money(amt)} <span class="cat-pct ${over ? 'over' : ''}">· ${pct(catPct)} of budget</span>`;
+    }else{
+      amtLine = `${money(amt)} <span class="cat-pct muted">· no budget set</span>`;
     }
+
+    const catEntries = inMonth
+      .filter(e => e.category === cat)
+      .map(e => ({ ...e, _iso: toISODate(e.date) }))
+      .sort((a,b)=> b._iso.localeCompare(a._iso));
+
+    const expensesHtml = catEntries.length
+      ? catEntries.map(e => `
+          <div class="entry-row">
+            <span class="e-date">${e._iso}</span>
+            <span class="e-mid"><span class="e-item">${e.item || "(no item)"}</span></span>
+            <span class="e-amt">${money(e.amount)}</span>
+          </div>
+        `).join("")
+      : `<div class="empty">No expenses in ${monthLabel(selected)}.</div>`;
+
     return `
-      <div class="cat-row">
-        <div class="cat-head">
-          <span>${cat}</span>
-          <span class="cat-amt">${money(amt)} · ${total ? Math.round(amt/total*100) : 0}%</span>
-        </div>
-        <div class="cat-bar-track"><div class="cat-bar-fill" style="width:${(amt/max*100).toFixed(1)}%"></div></div>
-        ${budgetLine}
-      </div>
+      <details class="cat-row">
+        <summary>
+          <div class="cat-head">
+            <span class="cat-name">${cat}</span>
+            <span class="cat-amt">${amtLine}</span>
+          </div>
+          <div class="cat-bar-track"><div class="cat-bar-fill" style="width:${(amt/max*100).toFixed(1)}%"></div></div>
+        </summary>
+        <div class="cat-expenses">${expensesHtml}</div>
+      </details>
     `;
   }).join("");
 }
