@@ -494,7 +494,7 @@ document.getElementById("entry-form").addEventListener("submit", async (e)=>{
   }
 
   statusEl.classList.remove("err");
-  statusEl.textContent = "Posting to ledger…";
+  statusEl.textContent = "Posting to expenditure book…";
 
   try{
     const result = await addEntry({ date, amount, category, item });
